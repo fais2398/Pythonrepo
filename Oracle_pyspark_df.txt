@@ -1,0 +1,40 @@
+#------------------------------------------------------------------------------
+# query.py (Section 1.3 and 1.4)
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+#------------------------------------------------------------------------------
+import db_config
+import findspark
+findspark.init()
+
+## put jar file in spark jar folder
+## or call py script using spark-submit --jars ojdbc8-21.5.0.0.jar Oracle_pyspark_df.py
+
+
+from pyspark.sql import SparkSession
+spark=SparkSession.builder.appName('Spark_Oracle_Connection').getOrCreate()
+
+
+driver='oracle.jdbc.driver.OracleDriver'
+url='jdbc:oracle:thin:@localhost:1521/ORCL'
+print(db_config.user)
+query="select e.first_name,d.department_name from Employees e,departments d where e.department_id=d.department_id"
+
+##normal read
+##df=spark.read.format('jdbc').option('driver', driver).option('url', url).option('query', query).option('user', db_config.user).option('password', db_config.pw).load()
+
+##parallel read using partition and fetchsize
+df=spark.read.format('jdbc').option('driver', driver).option('url', url).option('query', query).option("numPartitions",5).option("fetchsize", 20).option('user', db_config.user).option('password', db_config.pw).load()
+
+df.rdd.getNumPartitions()
+
+df.printSchema()
+
+df.show()
+
+df.head(3)
+
+#df.write.option('header','true').csv('EMPLOYEES')
+

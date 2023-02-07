@@ -1,0 +1,72 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib import style
+style.use("fivethirtyeight")
+
+xyz_web = {'Day':[1,2,3,4,5], "Visitors":[1000,2200,3000,2000,3000], "Bounce_rate" :[10,20,30,10,50]}
+
+df = pd.DataFrame(xyz_web)
+
+df.set_index("Day", inplace=True)
+
+df.plot()
+plt.show()
+
+### Export from file and write to SQL server DB
+
+import pandas as pd
+import pyodbc
+
+data = pd.read_csv (r'C:\Users\Faisal\Desktop\Student_info.csv')
+df = pd.DataFrame(data, columns= ['Student_id','Student_name','Marks','Gender'])
+
+
+conn = pyodbc.connect('Driver={SQL Server};'
+                      'Server=DESKTOP-6KC9JOT\MSSQLSERVER01;'
+                      'Database=FAISALSQLDB;'
+                      'Trusted_Connection=yes;')
+cursor = conn.cursor()
+
+# Create Table
+cursor.execute('CREATE TABLE student_info1 (Student_id nvarchar(50), Student_name nvarchar(500), Marks int, Gender nvarchar(50))')
+
+# Insert DataFrame to Table
+for row in df.itertuples():
+    cursor.execute('''
+                INSERT INTO dbo.student_info1 (Student_id,Student_name,Marks,Gender)
+                VALUES (?,?,?,?)
+                ''',
+                row.Student_id,
+                row.Student_name,
+                row.Marks,
+                row.Gender
+                )
+conn.commit()
+
+##from sqlalchemy import create_engine
+##engine = create_engine('postgresql://scott:tiger@localhost:5432/mydatabase')
+##engine = create_engine('mysql+mysqldb://scott:tiger@localhost/foo')
+##engine = create_engine('oracle://scott:tiger@127.0.0.1:1521/sidname')
+##engine = create_engine('mssql+pyodbc://mydsn')
+
+### read from sqldb and write to CSV file
+
+import pandas as pd
+import pyodbc
+
+conn = pyodbc.connect('Driver={SQL Server};'
+                      'Server=DESKTOP-6KC9JOT\MSSQLSERVER01;'
+                      'Database=FAISALSQLDB;'
+                      'Trusted_Connection=yes;')
+
+query = "SELECT [Student_id],[Student_name],[Marks],[Gender] FROM [FAISALSQLDB].[dbo].[student_info1]"
+
+data1 = pd.read_sql_query(query,conn)
+
+df1 = pd.DataFrame(data1, columns= ['Student_id','Student_name','Marks','Gender'])
+
+df1.to_csv(r'C:\Users\Faisal\Desktop\Student_info12.csv')
+
+### also other commands for pandas commands
+
+##   https://pandas.pydata.org/pandas-docs/stable/reference/

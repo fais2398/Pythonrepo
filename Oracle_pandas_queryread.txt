@@ -1,0 +1,29 @@
+#------------------------------------------------------------------------------
+# query.py (Section 1.3 and 1.4)
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+#------------------------------------------------------------------------------
+
+import oracledb
+import db_config
+
+con = oracledb.connect(user=db_config.user,password= db_config.pw, dsn=db_config.dsn)
+
+cur = con.cursor()
+
+cur.execute("select * from CUSTOMERS1 order by id")
+row = cur.fetchone()
+print(row)
+
+row = cur.fetchone()
+print(row)
+
+
+cur.execute("select * from COUNTRIES")
+res = cur.fetchmany(numRows = 6)
+print(res)
+
+cur.close()
+con.close()

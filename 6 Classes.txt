@@ -1,0 +1,79 @@
+## Classes are templates or blueprint of characteristics of a object
+## Objects is a entity of the classes
+## Class can be employee
+## Object can be Sarah employee with "Name :Sarah " and Age : 40 and Salary : 45000
+#### types of variables in a class
+## Class variables are common shared variables between all the instances (objects) of the class
+## Instance variables are unique characteristics specific to that instance only
+## Data member its a instance variable that holds date associated with a class
+
+## here we will learn about inheritence from 1 class to another
+
+class car():  ### self is function referenced to itself its a constructor
+    def __init__(self,modelname,year,price):
+        self.modelname = modelname
+        self.year = year
+        self.price = price
+
+    def price_inc(self):     ## function for price increase
+        self.price= int(self.price*1.15)
+
+honda = car('Civic',2017,1000000)
+tata = car('Thar',2016,200000)
+
+honda.ccengine=1500
+
+print(honda.__dict__)
+print(tata.__dict__)
+
+honda.price_inc() ## call function for price increase
+tata.price_inc() ## call function for price increase
+
+## print increased price
+print(honda.__dict__)
+print(tata.__dict__)
+
+
+## properties of inheritence
+## Class can inherit attribute and behaviour methods from another class
+## Class which inherits from superclass is called subclass or child class
+
+
+class Supercar(car):  ## Supercar is the subclass of car however you can overwrite att and methods
+    def __init__(self,modelname,year,price,trans):
+        self.modelname = modelname
+        self.year = year
+        self.price = price
+        self.trans = trans
+
+##honda = car('Civic',2018,1000000)
+tata = car('Thar',2016,200000)
+honda = Supercar('Civic',2018,1000000,120)
+
+tata.price_inc()
+
+print(honda.__dict__)
+print(tata.__dict__)
+
+
+
+
+## Encapsulate : Hiding the data from outsiders
+## 1 way to do is using getter setter method or by using @project
+
+## Abstraction hides the implementation details and exposes only functionality
+## if i need to drive a car i dont need know whats inside the engine i just use the components
+## so this can be achieved by using abstract classes
+## only difference is abstract class cannot have object of itself we need to inherit its properties
+#
+# for abc import ABC, abstractmethod
+#
+#
+# class car(ABC):
+#     @abstractmethod
+#     def price_inc(self):     ## function for price increase
+#         self.price= int(self.price*1.15)
+#
+# class Supercar(car):
+#     def price_inc(self):     ## function for price increase
+#         self.price= int(self.price*2)

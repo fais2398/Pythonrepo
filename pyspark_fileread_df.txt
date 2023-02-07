@@ -1,0 +1,422 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+from pyspark.sql import SparkSession
+spark=SparkSession.builder.appName('My app').master('local').getOrCreate()
+
+
+# In[28]:
+
+
+## spark resilient distribute dataframes (rdd) is a distributed immutable data collection which can be processed inmemory
+## and you can perform lazy evaluations or lazy transformation on the data 
+## lazy evaluation means you can transform data but unless action has been taken no transformation will take place. 
+## spark dataframe is distributed data collection like rdd with inmemory compute(distributed,immutable,lazy evaluation)
+## Based on SparkSQL framework with data organized in rows and columns like  unlike rdd based on sparkcore
+## so they have more functions  for data transformations compared to rdd 
+
+
+# In[120]:
+
+
+##use this data for all agrregate and groupby and split, when, windows function (rank, row_number), join, merge  transformations
+df_pyspark=spark.read.option('header','true').option('numPartitions',5).csv('Employees.csv',inferSchema='true')
+
+
+# In[69]:
+
+
+##use this data for all other transformations
+df_pyspark=spark.read.option('header','true').option('numPartitions',5).csv('Countries.csv',inferSchema='true')
+
+
+# In[96]:
+
+
+df_pyspark.show()
+
+
+# In[5]:
+
+
+df_pyspark.printSchema()
+
+
+# In[6]:
+
+
+## read a column 
+df_pyspark.select('COUNTRY_ID').show()
+
+
+# In[75]:
+
+
+df_pyspark.select(df_pyspark.COUNTRY_ID,df_pyspark.COUNTRY_NAME).show()
+
+
+# In[8]:
+
+
+df_pyspark.describe().show()
+
+
+# In[73]:
+
+
+#######adding column
+df_pyspark1=df_pyspark.withColumn('AGE_OF_COUNTRY',df_pyspark.REGION_ID+2)
+
+
+# In[74]:
+
+
+df_pyspark1.show()
+
+
+# In[12]:
+
+
+##### drop column
+df_pyspark1=df_pyspark1.drop('AGE_OF_COUNTRY')
+
+
+# In[13]:
+
+
+df_pyspark1.show()
+
+
+# In[19]:
+
+
+print(df_pyspark.count())
+
+
+# In[20]:
+
+
+#### Drop null values
+df_pyspark1=df_pyspark.na.drop() ##how="any" any 1 value is null
+
+
+# In[21]:
+
+
+print(df_pyspark1.count())
+
+
+# In[22]:
+
+
+df_pyspark1=df_pyspark.na.drop(how="all",thresh=2)## more than 2 then drop row
+
+
+# In[23]:
+
+
+print(df_pyspark1.count())
+
+
+# In[93]:
+
+
+df_pyspark1=df_pyspark.na.drop(how="all",subset=["COUNTRY_ID"]) ## country_id is null
+
+
+# In[91]:
+
+
+print(df_pyspark1.count())
+
+
+# In[79]:
+
+
+##replace missing values
+df_pyspark1=df_pyspark.na.fill("Missing Values",["COUNTRY_ID","COUNTRY_NAME"]) 
+
+
+# In[80]:
+
+
+df_pyspark1.show()
+
+
+# In[28]:
+
+
+from pyspark.ml.feature import Imputer
+
+imputer = Imputer(
+    inputCols=['ID', 'REGION_ID'], 
+    outputCols=["{}_imputed".format(c) for c in ['ID', 'REGION_ID']]
+    ).setStrategy("median")
+
+
+# In[29]:
+
+
+# Add imputation cols to df
+imputer.fit(df_pyspark).transform(df_pyspark).show()
+
+
+# In[ ]:
+
+
+#### Filter conditions 
+
+
+# In[83]:
+
+
+##Filter
+df_pyspark.filter(df_pyspark.REGION_ID=="2").show()
+
+
+# In[88]:
+
+
+df_pyspark.filter(df_pyspark.REGION_ID=="2").select(df_pyspark.COUNTRY_ID,df_pyspark.COUNTRY_NAME).show()
+
+
+# In[85]:
+
+
+## Or condition 2 conditions
+df_pyspark.filter((df_pyspark.ID<=2) | (df_pyspark.ID>=6)).show()
+
+
+# In[89]:
+
+
+df_pyspark.filter(df_pyspark.ID<=2).show()
+
+
+# In[71]:
+
+
+#in between 2 and 6 
+df_pyspark.filter((df_pyspark.ID >=2) & (df_pyspark.ID <=6)).show()
+
+
+# In[86]:
+
+
+## Not conditions Not of <=5 that is greater than 5
+df_pyspark.filter(~(df_pyspark.ID<=5)).show()
+
+
+# In[56]:
+
+
+### Group by aggregate function
+
+
+# In[6]:
+
+
+df_pyspark.show()
+
+
+# In[124]:
+
+
+df_pyspark=df_pyspark.selectExpr("cast(EMPLOYEE_ID as int) EMPLOYEE_ID","cast(FIRST_NAME as string) NAME","cast(DEPARTMENT_ID as int) DEPARTMENT_ID","cast(SALARY as int) SALARY")
+
+
+# In[16]:
+
+
+## Groupby
+### Grouped to find the maximum salary
+df_pyspark.groupBy('DEPARTMENT_ID').sum('SALARY').show()
+
+
+# In[17]:
+
+
+df_pyspark.groupBy('DEPARTMENT_ID').avg('SALARY').show()
+
+
+# In[23]:
+
+
+df_pyspark.groupBy('DEPARTMENT_ID').count().show()
+
+
+# In[20]:
+
+
+df_pyspark.groupBy('DEPARTMENT_ID').max('SALARY').show()
+
+
+# In[24]:
+
+
+df_pyspark.agg({'Salary':'sum'}).show()
+
+
+# In[33]:
+
+
+df_pyspark.groupBy('DEPARTMENT_ID').max('SALARY').orderBy('DEPARTMENT_ID').show()
+
+
+# In[34]:
+
+
+df_pyspark.filter(df_pyspark.DEPARTMENT_ID.isNotNull()).show()
+
+
+# In[35]:
+
+
+df_pyspark.filter(df_pyspark.DEPARTMENT_ID.isNull()).show()
+
+
+# In[52]:
+
+
+from pyspark.sql.functions import when
+
+
+# In[57]:
+
+
+df_pyspark.withColumn("Rich_index", when(df_pyspark.SALARY >="10000","Very Rich")
+                                    .when(df_pyspark.SALARY >="5000","Rich")
+                                    .otherwise("Poor")).show()
+
+
+# In[58]:
+
+
+from pyspark.sql.functions import split
+
+
+# In[98]:
+
+
+df_pyspark.withColumn('Name1', split(df_pyspark.NAME, " ").getItem(0))          .withColumn('Name2', split(df_pyspark.NAME, " ").getItem(1)).show()
+
+
+# In[101]:
+
+
+columns = ["Employee_Name", "Age",
+           "Department", "Salary"]
+
+
+# In[102]:
+
+
+sampleData = (("Ram", 28, "Sales", 3000),
+              ("Meena", 33, "Sales", 4600),
+              ("Robin", 40, "Sales", 4100),
+              ("Kunal", 25, "Finance", 3000),
+              ("Ram", 28, "Sales", 3000),
+              ("Srishti", 46, "Management", 3300),
+              ("Jeny", 26, "Finance", 3900),
+              ("Hitesh", 30, "Marketing", 3000),
+              ("Kailash", 29, "Marketing", 2000),
+              ("Sharad", 39, "Sales", 4100)
+              )
+
+
+# In[103]:
+
+
+df_pyemp=spark.createDataFrame(data=sampleData,
+                           schema=columns)
+
+
+# In[107]:
+
+
+df_pyemp.show()
+
+
+# In[108]:
+
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number
+
+
+# In[109]:
+
+
+windowSpec  = Window.partitionBy("department").orderBy("salary")
+
+
+# In[113]:
+
+
+df_pyemp.withColumn("row_number",row_number().over(windowSpec)).show(truncate=False)
+
+
+# In[114]:
+
+
+from pyspark.sql.functions import rank
+
+
+# In[115]:
+
+
+df_pyemp.withColumn("rank",rank().over(windowSpec)).show()
+
+
+# In[116]:
+
+
+from pyspark.sql.functions import dense_rank
+
+
+# In[117]:
+
+
+df_pyemp.withColumn("dense_rank",dense_rank().over(windowSpec))     .show()
+
+
+# In[118]:
+
+
+df_pyemp2=spark.createDataFrame(data=sampleData,
+                           schema=columns)
+
+
+# In[119]:
+
+
+merged_df=df_pyemp.unionByName(df_pyemp2)
+merged_df.show()
+
+
+# In[122]:
+
+
+df_pydept=spark.read.option('header','true').option('numPartitions',5).csv('Departments.csv',inferSchema='true')
+
+
+# In[123]:
+
+
+df_pydept.show()
+
+
+# In[125]:
+
+
+df_pyspark.join(df_pydept,df_pyspark.DEPARTMENT_ID ==  df_pydept.DEPARTMENT_ID,"inner")      .show(truncate=False)
+
+
+# In[ ]:
+
+
+
+
